@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Advice Template Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px dashed #dee2e6;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #4facfe;
+            background: #f0f8ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #00f2fe;
+            background: #e6f7ff;
+            transform: scale(1.02);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .image-container {
+            position: relative;
+            margin: 20px 0;
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 600px;
+        }
+
+        #templateImage {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .selection-box {
+            position: absolute;
+            border: 2px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            pointer-events: none;
+            border-radius: 4px;
+        }
+
+        .controls {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .field-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .field-controls label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .field-controls input, .field-controls select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .fields-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .field-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .field-item strong {
+            color: #333;
+        }
+
+        .json-output {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Advice Template Processor</h1>
+            <p>Upload, mark fields, and export as JSON</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>Upload Payment Advice Template</h3>
+                <p>Drag and drop your image or PDF here, or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept="image/*,.pdf">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+
+            <!-- Image Display -->
+            <div class="image-container" id="imageContainer">
+                <img id="templateImage" alt="Template">
+            </div>
+
+            <!-- Controls -->
+            <div class="controls" id="controls">
+                <div class="field-controls">
+                    <label for="fieldName">Field Name:</label>
+                    <input type="text" id="fieldName" placeholder="e.g., Date, Amount, Reference">
+                    
+                    <label for="fieldType">Field Type:</label>
+                    <select id="fieldType">
+                        <option value="text">Text</option>
+                        <option value="date">Date</option>
+                        <option value="amount">Amount</option>
+                        <option value="number">Number</option>
+                        <option value="email">Email</option>
+                        <option value="phone">Phone</option>
+                    </select>
+                    
+                    <button class="btn btn-primary" onclick="startSelection()">Mark Field</button>
+                    <button class="btn btn-success" onclick="saveCurrentField()">Save Field</button>
+                    <button class="btn btn-danger" onclick="clearSelection()">Clear</button>
+                </div>
+
+                <div id="statusMessage"></div>
+            </div>
+
+            <!-- Fields List -->
+            <div class="fields-list" id="fieldsList" style="display: none;">
+                <h3>Marked Fields</h3>
+                <div id="fieldsContainer"></div>
+            </div>
+
+            <!-- JSON Output -->
+            <div id="jsonOutput" style="display: none;">
+                <h3>JSON Output</h3>
+                <div class="json-output" id="jsonContent"></div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section" id="downloadSection" style="display: none;">
+                <button class="btn btn-success" onclick="generateJSON()">Generate JSON</button>
+                <button class="btn btn-primary" onclick="downloadJSON()">Download JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isSelecting = false;
+        let startX, startY, currentBox;
+        let fields = [];
+        let imageElement;
+
+        // File upload handling
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        
+        // Drag and drop
+        const uploadSection = document.getElementById('uploadSection');
+        uploadSection.addEventListener('dragover', handleDragOver);
+        uploadSection.addEventListener('dragleave', handleDragLeave);
+        uploadSection.addEventListener('drop', handleDrop);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    displayImage(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                showStatus('Please select an image file. PDF processing requires additional libraries.', 'error');
+            }
+        }
+
+        function displayImage(src) {
+            const imageContainer = document.getElementById('imageContainer');
+            const templateImage = document.getElementById('templateImage');
+            
+            templateImage.src = src;
+            imageContainer.style.display = 'block';
+            document.getElementById('controls').style.display = 'block';
+            
+            imageElement = templateImage;
+            
+            // Add mouse events for selection
+            templateImage.addEventListener('mousedown', startMouseSelection);
+            templateImage.addEventListener('mousemove', updateMouseSelection);
+            templateImage.addEventListener('mouseup', endMouseSelection);
+            
+            showStatus('Image loaded successfully! You can now mark fields.', 'success');
+        }
+
+        function startSelection() {
+            isSelecting = true;
+            showStatus('Click and drag on the image to select a field area.', 'info');
+        }
+
+        function startMouseSelection(e) {
+            if (!isSelecting) return;
+            
+            e.preventDefault();
+            const rect = imageElement.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            // Create selection box
+            currentBox = document.createElement('div');
+            currentBox.className = 'selection-box';
+            currentBox.style.left = startX + 'px';
+            currentBox.style.top = startY + 'px';
+            currentBox.style.width = '0px';
+            currentBox.style.height = '0px';
+            
+            document.getElementById('imageContainer').appendChild(currentBox);
+        }
+
+        function updateMouseSelection(e) {
+            if (!isSelecting || !currentBox) return;
+            
+            e.preventDefault();
+            const rect = imageElement.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            
+            currentBox.style.left = left + 'px';
+            currentBox.style.top = top + 'px';
+            currentBox.style.width = width + 'px';
+            currentBox.style.height = height + 'px';
+        }
+
+        function endMouseSelection(e) {
+            if (!isSelecting || !currentBox) return;
+            
+            isSelecting = false;
+            showStatus('Field area selected! Enter field name and type, then click "Save Field".', 'info');
+        }
+
+        function saveCurrentField() {
+            const fieldName = document.getElementById('fieldName').value;
+            const fieldType = document.getElementById('fieldType').value;
+            
+            if (!fieldName) {
+                showStatus('Please enter a field name.', 'error');
+                return;
+            }
+            
+            if (!currentBox) {
+                showStatus('Please select a field area first.', 'error');
+                return;
+            }
+            
+            // Get bounding box coordinates
+            const rect = currentBox.getBoundingClientRect();
+            const imageRect = imageElement.getBoundingClientRect();
+            
+            const bbox = {
+                x: parseInt(currentBox.style.left),
+                y: parseInt(currentBox.style.top),
+                width: parseInt(currentBox.style.width),
+                height: parseInt(currentBox.style.height)
+            };
+            
+            // Calculate relative coordinates (0-1 range)
+            const relativeCoords = {
+                x: bbox.x / imageElement.offsetWidth,
+                y: bbox.y / imageElement.offsetHeight,
+                width: bbox.width / imageElement.offsetWidth,
+                height: bbox.height / imageElement.offsetHeight
+            };
+            
+            const field = {
+                field_name: fieldName,
+                field_type: fieldType,
+                bbox: bbox,
+                relative_coordinates: relativeCoords,
+                timestamp: new Date().toISOString()
+            };
+            
+            fields.push(field);
+            
+            // Update UI
+            updateFieldsList();
+            clearSelection();
+            
+            document.getElementById('fieldName').value = '';
+            document.getElementById('downloadSection').style.display = 'block';
+            
+            showStatus(`Field "${fieldName}" saved successfully!`, 'success');
+        }
+
+        function clearSelection() {
+            if (currentBox) {
+                currentBox.remove();
+                currentBox = null;
+            }
+            isSelecting = false;
+        }
+
+        function updateFieldsList() {
+            const fieldsContainer = document.getElementById('fieldsContainer');
+            const fieldsList = document.getElementById('fieldsList');
+            
+            fieldsContainer.innerHTML = '';
+            
+            fields.forEach((field, index) => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'field-item';
+                fieldDiv.innerHTML = `
+                    <strong>${field.field_name}</strong> (${field.field_type})
+                    <br>
+                    <small>Coordinates: x=${field.bbox.x}, y=${field.bbox.y}, w=${field.bbox.width}, h=${field.bbox.height}</small>
+                    <br>
+                    <button class="btn btn-danger" onclick="removeField(${index})" style="margin-top: 5px; font-size: 12px;">Remove</button>
+                `;
+                fieldsContainer.appendChild(fieldDiv);
+            });
+            
+            fieldsList.style.display = fields.length > 0 ? 'block' : 'none';
+        }
+
+        function removeField(index) {
+            fields.splice(index, 1);
+            updateFieldsList();
+            showStatus('Field removed successfully!', 'success');
+        }
+
+        function generateJSON() {
+            const output = {
+                template_info: {
+                    processed_at: new Date().toISOString(),
+                    total_fields: fields.length
+                },
+                fields: fields
+            };
+            
+            const jsonContent = document.getElementById('jsonContent');
+            jsonContent.textContent = JSON.stringify(output, null, 2);
+            
+            document.getElementById('jsonOutput').style.display = 'block';
+            showStatus('JSON generated successfully!', 'success');
+        }
+
+        function downloadJSON() {
+            if (fields.length === 0) {
+                showStatus('No fields to download. Please mark some fields first.', 'error');
+                return;
+            }
+            
+            const output = {
+                template_info: {
+                    processed_at: new Date().toISOString(),
+                    total_fields: fields.length
+                },
+                fields: fields
+            };
+            
+            const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `payment_advice_fields_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            showStatus('JSON file downloaded successfully!', 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
